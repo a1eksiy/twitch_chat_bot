@@ -1,9 +1,10 @@
 import re
 import asyncpg
+import os
 from fastapi import FastAPI
 #from env import DB_URL
 
-
+DB_URL = os.getenv("DB_URL")
 
 def parse_message(raw_message : str):
     
