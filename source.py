@@ -1,13 +1,29 @@
 import fastapi
 import time
 import logging
-from datetime import datetime, timezone
+import asyncpg
 
-from functions import parse_message
+from contextlib import asynccontextmanager
+
+from functions import parse_message, on_shutdown, on_startup
+from postgres import get_connection
 
 
 
-app = fastapi.FastAPI()
+@asynccontextmanager
+async def lifespan(app : fastapi.FastAPI):
+   await on_startup(app = app)
+
+   yield
+
+   await on_shutdown(app = app)
+
+
+
+app = fastapi.FastAPI(lifespan = lifespan)
+
+
+
 
 #logging setup logic
 logger = logging.getLogger("api_logger")
@@ -55,11 +71,23 @@ async def test_log():
 
 
 
+
+
+
+
+
+
+
+
 @app.get("/submit")
-async def submit_game(user : str, message : str):
+async def submit_game(
+      user : str, 
+      message : str, 
+      conn = fastapi.Depends(get_connection)):
+
    game_id, parsed_message = parse_message(message)
    if not game_id or not parsed_message:
-      response_message = "Failed to sumbit game - missing game_id or message"
+      response_message = "Failed to submit game - missing game_id or message"
       logger.info({
       "event" : "sumbit_game",
       "user" : user,
@@ -72,15 +100,39 @@ async def submit_game(user : str, message : str):
          status_code=fastapi.status.HTTP_400_BAD_REQUEST,
          media_type="text/plain"
       )
+   
 
-   sumbit_time = datetime.now(timezone.utc) 
-   sumbit_time_str = sumbit_time.isoformat()
+
 
    #postgresql logic
     
+   try:
+      existing_game = await conn.fetchrow("SELECT * FROM submitted_games WHERE game_id = $1",
+                                    game_id)
+
+      if not existing_game:
+         await conn.execute("INSERT INTO submitted_games (game_id, submit_message) VALUES ($1, $2)",
+                   game_id, parsed_message)
+         print("created successfully")
+      else:
+         if parsed_message != existing_game["submit_message"]:
+            await conn.execute("UPDATE submitted_games SET submit_message = $1 WHERE game_id = $2",
+                   parsed_message, game_id)
+            print("updated successfully")
+
+   except asyncpg.PostgresError as err:
+      response_message = "database error occured. try sending your game again"
+      return fastapi.Response(
+         content=response_message,
+         status_code=fastapi.status.HTTP_500_INTERNAL_SERVER_ERROR,
+         media_type="text/plain"
+      )
+
+   
+   
    
 
-   response_message = "Game successfully submitted"
+   response_message = "Game successfully submitted!"
    logger.info({
       "event" : "sumbit_game",
       "user" : user,
