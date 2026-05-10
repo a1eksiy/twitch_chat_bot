@@ -24,7 +24,7 @@ app = fastapi.FastAPI(lifespan = lifespan)
 
 
 
-
+"""
 #logging setup logic
 logger = logging.getLogger("api_logger")
 logger.setLevel(logging.INFO)
@@ -63,6 +63,8 @@ async def log_requests(request: fastapi.Request, call_next):
 
    return response
 
+"""
+   
 
 @app.get("/test_log")
 async def test_log():
@@ -88,13 +90,15 @@ async def submit_game(
    game_id, parsed_message = parse_message(message)
    if not game_id or not parsed_message:
       response_message = "Failed to submit game - missing game_id or message"
+      """
       logger.info({
       "event" : "sumbit_game",
       "user" : user,
       "game_id" : game_id,
       "parsed_message" : parsed_message,
       "response_message" : response_message
-   })
+      }) 
+   """
       return fastapi.Response(
          content=response_message,
          status_code=fastapi.status.HTTP_400_BAD_REQUEST,
@@ -133,13 +137,14 @@ async def submit_game(
    
 
    response_message = "Game successfully submitted!"
-   logger.info({
+   """logger.info({
       "event" : "sumbit_game",
       "user" : user,
       "game_id" : game_id,
       "parsed_message" : parsed_message,
       "response_message" : response_message
    })
+   """
    return response_message
 
 
