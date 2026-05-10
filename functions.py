@@ -1,7 +1,7 @@
 import re
 import asyncpg
 from fastapi import FastAPI
-from env import DB_URL
+#from env import DB_URL
 
 
 
