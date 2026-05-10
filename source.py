@@ -148,7 +148,24 @@ async def submit_game(
    return response_message
 
 
+@app.get("/ping")
+async def ping():
+   return "pong"
+
+@app.get("/ping_db")
+async def ping_db(conn = fastapi.Depends(get_connection)):
+   result = await conn.fetchval("SELECT 1")
+   if result == 1:
+      return "pong db"
+   else:
+      return "Failed to ping db"
+
+
+
+
 @app.get("/get_sumbitted_games")
 async def get_submitted_games():
    #postgres retrieval logic 
    pass
+
+
