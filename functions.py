@@ -28,6 +28,15 @@ async def on_startup(app : FastAPI):
         max_size = 20
     )
     print("pool created")
+    async with app.state.pool.acquire() as conn:
+        await conn.execute("""                       
+                       CREATE TABLE IF NOT EXISTS submitted_games(
+                       row_id SERIAL,
+                       game_id BIGINT PRIMARY KEY,
+                       submit_message TEXT NOT NULL,
+                       created_at TIMESTAMPTZ DEFAULT NOW()
+                            )
+                            """)
 
 
 

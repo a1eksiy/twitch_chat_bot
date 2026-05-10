@@ -154,11 +154,14 @@ async def ping():
 
 @app.get("/ping_db")
 async def ping_db(conn = fastapi.Depends(get_connection)):
-   result = await conn.fetchval("SELECT 1")
-   if result == 1:
-      return "pong db"
-   else:
-      return "Failed to ping db"
+   try:
+      result = await conn.fetchval("SELECT 1")
+      if result == 1:
+         return "pong db"
+      else:
+         return "Failed to ping db"
+   except asyncpg.PostgresError as err:
+      return "error occurred. failed to ping db"
 
 
 
